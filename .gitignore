@@ -1,0 +1,16 @@
+/kernel/out/
+/kernel/
+/out/
+/work/
+/tools/
+/apk/
+
+*.img
+!*.sha256
+*.apk
+*.log
+*.tar
+*.tar.*
+*.zip
+
+.DS_Store
