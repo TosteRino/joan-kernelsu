@@ -1,26 +1,26 @@
 # LG V30 (joan / H930) - KernelSU
 
-Kernel z **KernelSU v0.9.5** (kprobe) dla **LineageOS 22.2** (`lineage-22.2-20260524-nightly-joan`) na LG V30 `joan` / H930.
+Kernel with **KernelSU v0.9.5** (kprobe) for **LineageOS 22.2** (`lineage-22.2-20260524-nightly-joan`) on the LG V30 `joan` / H930.
 
-Ten build jest dla klasycznego kernela **Linux 4.4.302 non-GKI**. Nie aktualizuj KernelSU Managera do nowszych wersji z banera w aplikacji; zostań przy **v0.9.5 (11872)**.
+This build targets the legacy **Linux 4.4.302 non-GKI** kernel. Do not update KernelSU Manager from the in-app update banner; stay on **v0.9.5 (11872)**.
 
-## Pliki
+## Files
 
-Repo zawiera skrypty i patche pozwalające odtworzyć źródła kernela z KernelSU:
+This repository contains scripts and patches to reproduce the KernelSU-enabled kernel source:
 
-- `prepare-source.sh` - klonuje kernel LineageOS, integruje KernelSU i aplikuje patche
-- `build-kernel.sh` - buduje `Image.gz-dtb`
-- `repack-boot.sh` - przepakowuje oficjalny `boot.img` z nowym kernelem
-- `patches/` - małe poprawki potrzebne do kompilacji lokalnym clangiem
+- `prepare-source.sh` - clones the LineageOS kernel, integrates KernelSU, and applies local patches
+- `build-kernel.sh` - builds `Image.gz-dtb`
+- `repack-boot.sh` - repacks an official `boot.img` with the rebuilt kernel
+- `patches/` - small fixes needed for local clang builds
 
-Gotowy obraz nie jest trzymany w git. Wydania GitHub powinny publikować go jako asset release:
+The ready-to-flash image is not stored in git. GitHub releases should publish it as a release asset:
 
 - `kernelsu-boot.img`
 - SHA256: `085689d5441c831d2f33a71c387f69fd4b00af12fe4e4c99ed042737cf611375`
 
 ## Flash
 
-Na LG V30 klasyczny bootloader fastboot potrafi zrywać transfer. Użyj fastbootd:
+On the LG V30, classic bootloader fastboot may disconnect while transferring the boot image. Use fastbootd:
 
 ```bash
 adb reboot fastboot
@@ -30,9 +30,9 @@ fastboot reboot
 
 KernelSU Manager: `v0.9.5 (11872)`.
 
-## Przywracanie
+## Rollback
 
-Pobierz oryginalny `boot.img` z tego samego buildu LineageOS, z którego korzystasz, i wgraj go przez fastbootd:
+Download the original `boot.img` from the same LineageOS build you are using and flash it through fastbootd:
 
 ```bash
 adb reboot fastboot
@@ -42,7 +42,7 @@ fastboot reboot
 
 ## Build
 
-Wymagane narzędzia: `clang`, `bc`, `make`, `mkbootimg`, `unpack_bootimg`, AArch64 cross compiler oraz ARM32 EABI linker dla compat vDSO.
+Required tools: `clang`, `bc`, `make`, `mkbootimg`, `unpack_bootimg`, an AArch64 cross compiler, and an ARM32 EABI linker for compat vDSO.
 
 ```bash
 ./prepare-source.sh
@@ -51,8 +51,8 @@ cp /path/to/official/boot.img stock-boot.img
 ./repack-boot.sh
 ```
 
-## Źródła i baza
+## Sources and Base
 
 - Kernel: `LineageOS/android_kernel_lge_msm8998` (`lineage-22.2`)
 - KernelSU: `tiann/KernelSU` tag `v0.9.5`
-- Oficjalny boot bazowy: `lineage-22.2-20260524-nightly-joan`
+- Official base boot image: `lineage-22.2-20260524-nightly-joan`
