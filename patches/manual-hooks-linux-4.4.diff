@@ -1,0 +1,423 @@
+diff --git a/fs/exec.c b/fs/exec.c
+index 341b872d..9f2403e6 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -46,6 +46,7 @@
+ #include <linux/mount.h>
+ #include <linux/security.h>
+ #include <linux/syscalls.h>
++#include <linux/kernelsu.h>
+ #include <linux/tsacct_kern.h>
+ #include <linux/cn_proc.h>
+ #include <linux/audit.h>
+@@ -1544,6 +1545,8 @@ static int do_execveat_common(int fd, struct filename *filename,
+ 	if (IS_ERR(filename))
+ 		return PTR_ERR(filename);
+ 
++	ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
++
+ 	/*
+ 	 * We move the actual failure in case of RLIMIT_NPROC excess from
+ 	 * set*uid() to execve() because too many poorly written programs
+diff --git a/fs/open.c b/fs/open.c
+index c39c1d1f..4008ec3a 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -24,6 +24,7 @@
+ #include <linux/personality.h>
+ #include <linux/pagemap.h>
+ #include <linux/syscalls.h>
++#include <linux/kernelsu.h>
+ #include <linux/rcupdate.h>
+ #include <linux/audit.h>
+ #include <linux/falloc.h>
+@@ -353,6 +354,8 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
+ 	int res;
+ 	unsigned int lookup_flags = LOOKUP_FOLLOW;
+ 
++	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
++
+ 	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+ 		return -EINVAL;
+ 
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 27023e8f..7d4dfcec 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -13,6 +13,7 @@
+ #include <linux/security.h>
+ #include <linux/export.h>
+ #include <linux/syscalls.h>
++#include <linux/kernelsu.h>
+ #include <linux/pagemap.h>
+ #include <linux/splice.h>
+ #include <linux/compat.h>
+@@ -440,6 +441,8 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
+ {
+ 	ssize_t ret;
+ 
++	ksu_handle_vfs_read(&file, &buf, &count, &pos);
++
+ 	if (!(file->f_mode & FMODE_READ))
+ 		return -EBADF;
+ 	if (!(file->f_mode & FMODE_CAN_READ))
+diff --git a/fs/stat.c b/fs/stat.c
+index 004dd77c..235534bc 100644
+--- a/fs/stat.c
++++ b/fs/stat.c
+@@ -13,6 +13,7 @@
+ #include <linux/namei.h>
+ #include <linux/security.h>
+ #include <linux/syscalls.h>
++#include <linux/kernelsu.h>
+ #include <linux/pagemap.h>
+ 
+ #include <asm/uaccess.h>
+@@ -94,6 +95,8 @@ int vfs_fstatat(int dfd, const char __user *filename, struct kstat *stat,
+ 	int error = -EINVAL;
+ 	unsigned int lookup_flags = 0;
+ 
++	ksu_handle_stat(&dfd, &filename, &flag);
++
+ 	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
+ 		      AT_EMPTY_PATH)) != 0)
+ 		goto out;
+@@ -309,6 +312,8 @@ SYSCALL_DEFINE2(newfstat, unsigned int, fd, struct stat __user *, statbuf)
+ 	if (!error)
+ 		error = cp_new_stat(&stat, statbuf);
+ 
++	ksu_handle_newfstat_ret(&fd, &statbuf);
++
+ 	return error;
+ }
+ 
+@@ -427,6 +432,8 @@ SYSCALL_DEFINE2(fstat64, unsigned long, fd, struct stat64 __user *, statbuf)
+ 	if (!error)
+ 		error = cp_new_stat64(&stat, statbuf);
+ 
++	ksu_handle_fstat64_ret(&fd, &statbuf);
++
+ 	return error;
+ }
+ 
+diff --git a/kernel/reboot.c b/kernel/reboot.c
+index 2946ed1d..9257c176 100644
+--- a/kernel/reboot.c
++++ b/kernel/reboot.c
+@@ -16,6 +16,7 @@
+ #include <linux/syscalls.h>
+ #include <linux/syscore_ops.h>
+ #include <linux/uaccess.h>
++#include <linux/kernelsu.h>
+ 
+ /*
+  * this indicates whether you can reboot with ctrl-alt-del: the default is yes
+@@ -284,6 +285,10 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+ 	char buffer[256];
+ 	int ret = 0;
+ 
++	ret = ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
++	if (ret)
++		return ret;
++
+ 	/* We only trust the superuser with rebooting the system. */
+ 	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
+ 		return -EPERM;
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 25cf2aa7..2aef2ac8 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -47,6 +47,7 @@
+ #include <linux/compat.h>
+ #include <linux/syscalls.h>
+ #include <linux/kprobes.h>
++#include <linux/kernelsu.h>
+ #include <linux/user_namespace.h>
+ #include <linux/binfmts.h>
+ 
+@@ -589,6 +590,8 @@ SYSCALL_DEFINE3(setresuid, uid_t, ruid, uid_t, euid, uid_t, suid)
+ 	int retval;
+ 	kuid_t kruid, keuid, ksuid;
+ 
++	ksu_handle_setresuid(ruid, euid, suid);
++
+ 	kruid = make_kuid(ns, ruid);
+ 	keuid = make_kuid(ns, euid);
+ 	ksuid = make_kuid(ns, suid);
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index 3bac7942..5ba28b1a 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -256,7 +256,7 @@ static int __inode_security_revalidate(struct inode *inode,
+ 				       struct dentry *opt_dentry,
+ 				       bool may_sleep)
+ {
+-	struct inode_security_struct *isec = inode->i_security;
++	struct inode_security_struct *isec = selinux_inode(inode);
+ 
+ 	might_sleep_if(may_sleep);
+ 
+@@ -276,7 +276,7 @@ static int __inode_security_revalidate(struct inode *inode,
+ 
+ static struct inode_security_struct *inode_security_novalidate(struct inode *inode)
+ {
+-	return inode->i_security;
++	return selinux_inode(inode);
+ }
+ 
+ static struct inode_security_struct *inode_security_rcu(struct inode *inode, bool rcu)
+@@ -286,7 +286,7 @@ static struct inode_security_struct *inode_security_rcu(struct inode *inode, boo
+ 	error = __inode_security_revalidate(inode, NULL, !rcu);
+ 	if (error)
+ 		return ERR_PTR(error);
+-	return inode->i_security;
++	return selinux_inode(inode);
+ }
+ 
+ /*
+@@ -295,14 +295,14 @@ static struct inode_security_struct *inode_security_rcu(struct inode *inode, boo
+ static struct inode_security_struct *inode_security(struct inode *inode)
+ {
+ 	__inode_security_revalidate(inode, NULL, true);
+-	return inode->i_security;
++	return selinux_inode(inode);
+ }
+ 
+ static struct inode_security_struct *backing_inode_security_novalidate(struct dentry *dentry)
+ {
+ 	struct inode *inode = d_backing_inode(dentry);
+ 
+-	return inode->i_security;
++	return selinux_inode(inode);
+ }
+ 
+ /*
+@@ -313,7 +313,7 @@ static struct inode_security_struct *backing_inode_security(struct dentry *dentr
+ 	struct inode *inode = d_backing_inode(dentry);
+ 
+ 	__inode_security_revalidate(inode, dentry, true);
+-	return inode->i_security;
++	return selinux_inode(inode);
+ }
+ 
+ static void inode_free_rcu(struct rcu_head *head)
+@@ -326,7 +326,7 @@ static void inode_free_rcu(struct rcu_head *head)
+ 
+ static void inode_free_security(struct inode *inode)
+ {
+-	struct inode_security_struct *isec = inode->i_security;
++	struct inode_security_struct *isec = selinux_inode(inode);
+ 	struct superblock_security_struct *sbsec = inode->i_sb->s_security;
+ 
+ 	/*
+@@ -1367,7 +1367,7 @@ static int selinux_genfs_get_sid(struct dentry *dentry,
+ static int inode_doinit_with_dentry(struct inode *inode, struct dentry *opt_dentry)
+ {
+ 	struct superblock_security_struct *sbsec = NULL;
+-	struct inode_security_struct *isec = inode->i_security;
++	struct inode_security_struct *isec = selinux_inode(inode);
+ 	u32 sid;
+ 	struct dentry *dentry;
+ #define INITCONTEXTLEN 255
+@@ -1705,7 +1705,7 @@ static int inode_has_perm(const struct cred *cred,
+ 		return 0;
+ 
+ 	sid = cred_sid(cred);
+-	isec = inode->i_security;
++	isec = selinux_inode(inode);
+ 
+ 	return avc_has_perm(sid, isec->sid, isec->sclass, perms, adp);
+ }
+@@ -2262,6 +2262,11 @@ static int selinux_vm_enough_memory(struct mm_struct *mm, long pages)
+ 
+ /* binprm security operations */
+ 
++#ifdef CONFIG_KSU
++extern bool is_ksu_transition(const struct task_security_struct *old_tsec,
++			      const struct task_security_struct *new_tsec);
++#endif
++
+ static int check_nnp_nosuid(const struct linux_binprm *bprm,
+ 			    const struct task_security_struct *old_tsec,
+ 			    const struct task_security_struct *new_tsec)
+@@ -2276,6 +2281,11 @@ static int check_nnp_nosuid(const struct linux_binprm *bprm,
+ 	if (new_tsec->sid == old_tsec->sid)
+ 		return 0; /* No change in credentials */
+ 
++#ifdef CONFIG_KSU
++	if (is_ksu_transition(old_tsec, new_tsec))
++		return 0;
++#endif
++
+ 	/*
+ 	 * The only transitions we permit under NNP or nosuid
+ 	 * are transitions to bounded SIDs, i.e. SIDs that are
+@@ -2868,7 +2878,7 @@ static int selinux_inode_init_security(struct inode *inode, struct inode *dir,
+ 
+ 	/* Possibly defer initialization to selinux_complete_init. */
+ 	if (sbsec->flags & SE_SBINITIALIZED) {
+-		struct inode_security_struct *isec = inode->i_security;
++		struct inode_security_struct *isec = selinux_inode(inode);
+ 		isec->sclass = inode_mode_to_security_class(inode->i_mode);
+ 		isec->sid = newsid;
+ 		isec->initialized = LABEL_INITIALIZED;
+@@ -2966,7 +2976,7 @@ static noinline int audit_inode_permission(struct inode *inode,
+ 					   unsigned flags)
+ {
+ 	struct common_audit_data ad;
+-	struct inode_security_struct *isec = inode->i_security;
++	struct inode_security_struct *isec = selinux_inode(inode);
+ 	int rc;
+ 
+ 	ad.type = LSM_AUDIT_DATA_INODE;
+@@ -3786,7 +3796,7 @@ static int selinux_kernel_module_from_file(struct file *file)
+ 	}
+ 
+ 	inode = file_inode(file);
+-	isec = inode->i_security;
++	isec = selinux_inode(inode);
+ 	return avc_has_perm(sid, isec->sid, SECCLASS_SYSTEM,
+ 				SYSTEM__MODULE_LOAD, &ad);
+ }
+@@ -3882,7 +3892,7 @@ static int selinux_task_wait(struct task_struct *p)
+ static void selinux_task_to_inode(struct task_struct *p,
+ 				  struct inode *inode)
+ {
+-	struct inode_security_struct *isec = inode->i_security;
++	struct inode_security_struct *isec = selinux_inode(inode);
+ 	u32 sid = task_sid(p);
+ 
+ 	isec->sid = sid;
+@@ -5934,7 +5944,7 @@ static void selinux_release_secctx(char *secdata, u32 seclen)
+ 
+ static void selinux_inode_invalidate_secctx(struct inode *inode)
+ {
+-	struct inode_security_struct *isec = inode->i_security;
++	struct inode_security_struct *isec = selinux_inode(inode);
+ 
+ 	mutex_lock(&isec->lock);
+ 	isec->initialized = LABEL_INVALID;
+diff --git a/include/linux/kernelsu.h b/include/linux/kernelsu.h
+new file mode 100644
+index 00000000..74907a30
+--- /dev/null
++++ b/include/linux/kernelsu.h
+@@ -0,0 +1,68 @@
++#ifndef _LINUX_KERNELSU_H
++#define _LINUX_KERNELSU_H
++
++#include <linux/fs.h>
++#include <linux/types.h>
++#include <linux/uidgid.h>
++
++struct filename;
++struct pt_regs;
++struct user_arg_ptr;
++
++#ifdef CONFIG_KSU
++int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
++			void *argv, void *envp, int *flags);
++int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
++			 int *mode, int *flags);
++int ksu_handle_stat(int *dfd, const char __user **filename_user, int *flags);
++int ksu_handle_vfs_read(struct file **file_ptr, char __user **buf_ptr,
++			size_t *count_ptr, loff_t **pos);
++void ksu_handle_newfstat_ret(unsigned int *fd, struct stat __user **statbuf);
++void ksu_handle_fstat64_ret(unsigned long *fd, struct stat64 __user **statbuf);
++int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid);
++int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd,
++			  void __user **arg);
++#else
++static inline int ksu_handle_execveat(int *fd, struct filename **filename_ptr,
++				      void *argv, void *envp, int *flags)
++{
++	return 0;
++}
++static inline int ksu_handle_faccessat(int *dfd,
++				       const char __user **filename_user,
++				       int *mode, int *flags)
++{
++	return 0;
++}
++static inline int ksu_handle_stat(int *dfd,
++				  const char __user **filename_user,
++				  int *flags)
++{
++	return 0;
++}
++static inline int ksu_handle_vfs_read(struct file **file_ptr,
++				      char __user **buf_ptr, size_t *count_ptr,
++				      loff_t **pos)
++{
++	return 0;
++}
++static inline void ksu_handle_newfstat_ret(unsigned int *fd,
++					   struct stat __user **statbuf)
++{
++}
++static inline void ksu_handle_fstat64_ret(unsigned long *fd,
++					  struct stat64 __user **statbuf)
++{
++}
++static inline int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
++{
++	return 0;
++}
++static inline int ksu_handle_sys_reboot(int magic1, int magic2,
++					unsigned int cmd, void __user **arg)
++{
++	return 0;
++}
++#endif
++
++#endif /* _LINUX_KERNELSU_H */
+diff --git a/KernelSU-Next/kernel/hook/hook_manager.c b/KernelSU-Next/kernel/hook/hook_manager.c
+index 21f42d0c..298b905e 100644
+--- a/KernelSU-Next/kernel/hook/hook_manager.c
++++ b/KernelSU-Next/kernel/hook/hook_manager.c
+@@ -299,7 +299,7 @@ int ksu_handle_init_mark_tracker(const char __user **filename_user)
+ 	return 0;
+ }
+ 
+-#ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
++#if defined(CONFIG_HAVE_SYSCALL_TRACEPOINTS) && !defined(CONFIG_KSU_MANUAL_HOOK)
+ // Generic sys_enter handler that dispatches to specific handlers
+ static void ksu_sys_enter_handler(void *data, struct pt_regs *regs, long id)
+ {
+@@ -360,17 +360,17 @@ static void ksu_sys_enter_handler(void *data, struct pt_regs *regs, long id)
+ 
+ void __init ksu_syscall_hook_manager_init(void)
+ {
+-	int ret;
++	int ret __maybe_unused;
+ 	pr_info("hook_manager: ksu_hook_manager_init called\n");
+ 
+-#ifdef CONFIG_KRETPROBES
++#if defined(CONFIG_KRETPROBES) && !defined(CONFIG_KSU_MANUAL_HOOK)
+ 	// Register kretprobe for syscall_regfunc
+ 	syscall_regfunc_rp = init_kretprobe("syscall_regfunc", syscall_regfunc_handler);
+ 	// Register kretprobe for syscall_unregfunc
+ 	syscall_unregfunc_rp = init_kretprobe("syscall_unregfunc", syscall_unregfunc_handler);
+ #endif
+ 
+-#ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
++#if defined(CONFIG_HAVE_SYSCALL_TRACEPOINTS) && !defined(CONFIG_KSU_MANUAL_HOOK)
+ 	ret = register_trace_sys_enter(ksu_sys_enter_handler, NULL);
+ #ifndef CONFIG_KRETPROBES
+ 	ksu_mark_running_process_locked();
+@@ -390,13 +390,13 @@ void __init ksu_syscall_hook_manager_init(void)
+ void __exit ksu_syscall_hook_manager_exit(void)
+ {
+ 	pr_info("hook_manager: ksu_hook_manager_exit called\n");
+-#ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
++#if defined(CONFIG_HAVE_SYSCALL_TRACEPOINTS) && !defined(CONFIG_KSU_MANUAL_HOOK)
+ 	unregister_trace_sys_enter(ksu_sys_enter_handler, NULL);
+ 	tracepoint_synchronize_unregister();
+ 	pr_info("hook_manager: sys_enter tracepoint unregistered\n");
+ #endif
+ 
+-#ifdef CONFIG_KRETPROBES
++#if defined(CONFIG_KRETPROBES) && !defined(CONFIG_KSU_MANUAL_HOOK)
+ 	destroy_kretprobe(&syscall_regfunc_rp);
+ 	destroy_kretprobe(&syscall_unregfunc_rp);
+ #endif

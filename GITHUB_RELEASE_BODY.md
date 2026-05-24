@@ -1,10 +1,12 @@
 ## Summary
 
-KernelSU Next boot image for LG V30 H930 (`joan`) on LineageOS 22.2 nightly `20260524`.
+KernelSU Next manual-hooks boot image for LG V30 H930 (`joan`) on LineageOS 22.2 nightly `20260524`.
 
 - KernelSU Next `v3.2.0 legacy (33129)` for non-GKI Linux 4.4
 - Based on LineageOS `android_kernel_lge_msm8998` branch `lineage-22.2`
-- Verified booting on LG-H930 with KernelSU Next Manager reporting active root
+- Strict manual hooks; KernelSU kprobes/kretprobes are disabled
+- Zygisk Next verified in `zygote` and `zygote_secondary`
+- Play Integrity verified: BASIC + DEVICE with TrickyStore + FixIntegrity
 - Legacy KernelSU `v0.9.5` image is kept as a rollback option
 
 ## Assets
@@ -17,7 +19,7 @@ KernelSU Next boot image for LG V30 H930 (`joan`) on LineageOS 22.2 nightly `202
 SHA256:
 
 ```text
-80d4d430491ab54e271d60d579d6ea66f197ebc59ecdc5aba677fa7dffbf7b57  kernelsu-next-boot.img
+8db8e7595af534f348401c4ca8a005088e05f2c90edaa4cffbc8bbc1e6da87c4  kernelsu-next-boot.img
 ```
 
 ## Flash

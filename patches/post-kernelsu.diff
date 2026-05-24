@@ -9,6 +9,8 @@ index 966fb653..c27aa690 100644
 +
 +# KernelSU
 +CONFIG_KSU=y
++CONFIG_KSU_MANUAL_HOOK=y
++# CONFIG_KSU_KPROBES_HOOK is not set
 +CONFIG_KPROBES=y
 +CONFIG_KPROBE_EVENTS=y
 diff --git a/arch/arm64/configs/lineageos_joan_defconfig b/arch/arm64/configs/lineageos_joan_defconfig

@@ -24,5 +24,6 @@ echo "[+] Integrating KernelSU Next (${KSU_REF})"
 
 echo "[+] Applying local post-KernelSU Next patches"
 patch -d "${KERNEL_DIR}" -p1 < "${ROOT}/patches/post-kernelsu.diff"
+patch -d "${KERNEL_DIR}" -p1 < "${ROOT}/patches/manual-hooks-linux-4.4.diff"
 
 echo "[+] Source prepared in ${KERNEL_DIR}"
