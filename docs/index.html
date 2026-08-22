@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LG V30 Root 2026 — KernelSU Next for joan / H930</title>
+  <meta name="description" content="KernelSU Next root kernel for LG V30 joan / H930 on LineageOS 22.2 Android 15. Manual hooks on Linux 4.4.302, ready-to-flash boot image.">
+  <meta name="keywords" content="LG V30 root 2026, LG V30 KernelSU, LG V30 LineageOS 22.2 root, joan KernelSU, H930 root Android 15, msm8998 KernelSU Next">
+  <link rel="canonical" href="https://tosterino.github.io/joan-kernelsu/">
+  <meta property="og:title" content="LG V30 Root 2026 — KernelSU Next for joan">
+  <meta property="og:description" content="Manual-hooks KernelSU Next kernel for LG V30 H930 on LineageOS 22.2 / Android 15.">
+  <meta property="og:url" content="https://tosterino.github.io/joan-kernelsu/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#07080A">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --oled: #07080a;
+      --chassis: #14171c;
+      --aluminum: #c9cdd4;
+      --cyan: #4fd1c5;
+      --text: #eef1f4;
+      --dim: #8a9099;
+      --line: #2a2f38;
+      --danger: #ff8a80;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--oled);
+      color: var(--text);
+      font: 16px/1.55 "IBM Plex Sans", system-ui, sans-serif;
+    }
+    a { color: inherit; }
+    code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .skip {
+      position: absolute; left: 1rem; top: -5rem; z-index: 20;
+      background: var(--cyan); color: var(--oled);
+      padding: 0.7rem 1rem; font-weight: 600; text-decoration: none;
+    }
+    .skip:focus { top: 0.75rem; }
+
+    .ticker {
+      overflow: hidden;
+      border-bottom: 1px solid var(--line);
+      background: #050607;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+    }
+    .ticker-track {
+      display: flex;
+      gap: 2.5rem;
+      white-space: nowrap;
+      animation: ticker 32s linear infinite;
+      font: 500 0.72rem/1 "IBM Plex Mono", monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+    .ticker-track span { flex-shrink: 0; }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .wordmark {
+      text-decoration: none;
+      font-family: "Archivo Narrow", sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .wordmark em { font-style: normal; color: var(--cyan); }
+    nav { display: flex; gap: 0.15rem; }
+    nav a, .menu {
+      color: var(--dim);
+      text-decoration: none;
+      min-height: 44px;
+      padding: 0.5rem 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    nav a:hover { color: var(--text); }
+    .menu {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+
+    .wrap { width: min(100% - 2rem, 70rem); margin-inline: auto; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 3rem;
+      padding: 3.5rem 0 4rem;
+      align-items: center;
+    }
+    h1 {
+      font-family: "Archivo Narrow", sans-serif;
+      font-size: clamp(2.6rem, 8vw, 5.2rem);
+      font-weight: 700;
+      line-height: 0.88;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      margin: 0 0 1.1rem;
+    }
+    .lede { color: var(--dim); max-width: 36rem; margin: 0 0 1.6rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 48px; padding: 0.7rem 1.15rem; cursor: pointer;
+      font: 600 0.95rem/1 "IBM Plex Sans", sans-serif;
+      text-decoration: none; border: 1px solid transparent;
+      transition: background 180ms var(--ease), color 180ms var(--ease), border-color 180ms var(--ease);
+    }
+    .btn-solid { background: var(--aluminum); color: #111; }
+    .btn-solid:hover { background: #fff; }
+    .btn-line { border-color: var(--aluminum); color: var(--aluminum); }
+    .btn-line:hover { background: #1c2026; }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+    .phone {
+      justify-self: end;
+      width: min(100%, 18rem);
+      aspect-ratio: 9 / 18.5;
+      border: 1px solid var(--aluminum);
+      border-radius: 1.6rem 1.6rem 1.35rem 1.35rem;
+      padding: 0.7rem 0.55rem 0.9rem;
+      background: linear-gradient(180deg, #1b1f26, #0c0d10);
+    }
+    .phone-notch {
+      height: 0.35rem; width: 28%; margin: 0.15rem auto 0.55rem;
+      background: var(--oled); border-radius: 999px;
+    }
+    .phone-screen {
+      height: calc(100% - 1.1rem);
+      background: #050607;
+      border: 1px solid var(--line);
+      padding: 0.85rem 0.8rem;
+      overflow: hidden;
+      font: 400 0.68rem/1.55 "IBM Plex Mono", monospace;
+      color: var(--cyan);
+    }
+    .phone-screen .off { color: var(--dim); }
+
+    section { padding: 3.25rem 0; border-top: 1px solid var(--line); }
+    .kicker {
+      font: 500 0.72rem/1 "IBM Plex Mono", monospace;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--cyan); margin: 0 0 0.6rem;
+    }
+    h2 {
+      font-family: "Archivo Narrow", sans-serif;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      text-transform: uppercase; letter-spacing: 0.02em;
+      margin: 0 0 1.4rem;
+    }
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--line);
+    }
+    .facts div {
+      padding: 1rem 1.1rem;
+      border-right: 1px solid var(--line);
+    }
+    .facts div:last-child { border-right: 0; }
+    .facts dt { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .facts dd { margin: 0.25rem 0 0; font-weight: 600; }
+
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+    .split p { color: var(--dim); margin-top: 0; }
+    .hooks { list-style: none; padding: 0; margin: 0; }
+    .hooks li {
+      display: grid; grid-template-columns: 9rem 1fr;
+      gap: 1rem; padding: 0.7rem 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+    .hooks code { color: var(--cyan); }
+
+    .flash-grid { display: grid; gap: 0.75rem; }
+    .flash-row {
+      display: grid; grid-template-columns: 7rem 1fr;
+      gap: 1rem; align-items: start;
+    }
+    .flash-row strong {
+      font-family: "Archivo Narrow", sans-serif;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--aluminum);
+    }
+    pre {
+      margin: 0.5rem 0 0; padding: 0.9rem 1rem;
+      background: #050607; border: 1px solid var(--line);
+      overflow-x: auto; font-size: 0.8rem; color: var(--aluminum);
+    }
+    .hash-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; align-items: center; }
+    .hash {
+      flex: 1 1 16rem; font-size: 0.75rem; color: var(--dim);
+      border: 1px solid var(--line); padding: 0.75rem 0.9rem;
+      overflow-wrap: anywhere;
+    }
+    .copy {
+      min-height: 44px; padding: 0.5rem 0.9rem; cursor: pointer;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--aluminum); font: 600 0.85rem "IBM Plex Sans", sans-serif;
+    }
+    .copy:hover { background: #1c2026; }
+
+    .warn {
+      border: 1px solid var(--danger); padding: 1.1rem 1.2rem;
+      color: #ffc7c0;
+    }
+    .warn h2 { margin-bottom: 0.4rem; color: var(--text); }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 1.6rem 0 2.4rem; color: var(--dim); font-size: 0.88rem;
+    }
+    footer a { color: var(--aluminum); }
+    .vibe {
+      display: inline-block; margin-top: 0.75rem;
+      border: 1px dashed var(--line); padding: 0.2rem 0.65rem;
+      font-size: 0.78rem;
+    }
+    .vibe strong { color: var(--cyan); font-weight: 600; }
+
+    @media (max-width: 860px) {
+      .hero, .split, .facts { grid-template-columns: 1fr; }
+      .facts div { border-right: 0; border-bottom: 1px solid var(--line); }
+      .facts div:last-child { border-bottom: 0; }
+      .phone { justify-self: start; max-width: 16rem; }
+      .hooks li { grid-template-columns: 1fr; gap: 0.2rem; }
+      .flash-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .menu { display: inline-flex; }
+      nav { display: none; }
+      body.nav-open nav {
+        display: flex; flex-direction: column;
+        position: absolute; right: 1rem; top: 5.2rem;
+        background: var(--chassis); border: 1px solid var(--line);
+        min-width: 12rem; z-index: 10;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .ticker-track { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>joan · H930 · msm8998 · 4.4.302-perf+ · KernelSU Next 33193 · lineage-22.2-20260816 · fastbootd · manual hooks · CONFIG_KSU=y</span>
+      <span>joan · H930 · msm8998 · 4.4.302-perf+ · KernelSU Next 33193 · lineage-22.2-20260816 · fastbootd · manual hooks · CONFIG_KSU=y</span>
+    </div>
+  </div>
+  <header class="bar">
+    <a class="wordmark" href="#top" aria-label="joan-ksu">joan-<em>ksu</em></a>
+    <button class="menu" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">Menu</button>
+    <nav id="site-nav" aria-label="Primary">
+      <a href="#compat">Device</a>
+      <a href="#hooks">Hooks</a>
+      <a href="#flash">Flash</a>
+      <a href="#build">Build</a>
+      <a href="https://github.com/TosteRino/joan-kernelsu">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="wrap hero" id="top">
+      <div>
+        <h1>FullVision<br>root for<br>the V30.</h1>
+        <p class="lede">
+          KernelSU Next with manual hooks for LG V30 <strong>joan / H930</strong> on LineageOS 22.2.
+          This is a 4.4 kernel. Kprobes will not save you here.
+        </p>
+        <div class="actions">
+          <a class="btn btn-solid" href="https://github.com/TosteRino/joan-kernelsu/releases/latest">Download boot image</a>
+          <a class="btn btn-line" href="https://github.com/TosteRino/joan-kernelsu">View source</a>
+        </div>
+      </div>
+      <aside class="phone" aria-label="Kernel config preview">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="off"># lineageos_joan_defconfig</div>
+          CONFIG_KSU=y<br>
+          CONFIG_KSU_MANUAL_HOOK=y<br>
+          <span class="off"># CONFIG_KSU_KPROBES_HOOK is not set</span><br><br>
+          <span class="off">legacy @ a54e4fa4</span><br>
+          version 33193<br>
+          manager v3.3.0<br><br>
+          <span class="off">fastboot flash boot \</span><br>
+          kernelsu-next-boot.img
+        </div>
+      </aside>
+    </div>
+
+    <section id="compat">
+      <div class="wrap">
+        <p class="kicker">Compatibility</p>
+        <h2>One phone. One nightly.</h2>
+        <dl class="facts">
+          <div><dt>Device</dt><dd>LG V30 joan H930</dd></div>
+          <div><dt>SoC</dt><dd>msm8998</dd></div>
+          <div><dt>ROM</dt><dd>LineageOS 22.2 · 20260816</dd></div>
+          <div><dt>Kernel</dt><dd>Linux 4.4.302 non-GKI</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section id="hooks">
+      <div class="wrap split">
+        <div>
+          <p class="kicker">Why manual</p>
+          <h2>Hooks in the syscall path.</h2>
+          <p>Kprobe VFS interception falls over on this 4.4 tree under real I/O. The patch writes KernelSU into the same paths Android init actually uses — including newfstat so Zygisk can see the enlarged init.rc, and an SELinux exception so init can exec ksud on Android 15.</p>
+        </div>
+        <ul class="hooks">
+          <li><code>fs/exec.c</code> do_execveat_common</li>
+          <li><code>fs/read_write.c</code> vfs_read</li>
+          <li><code>fs/open.c</code> faccessat</li>
+          <li><code>fs/stat.c</code> stat + newfstat/fstat64</li>
+          <li><code>kernel/sys.c</code> setresuid</li>
+          <li><code>kernel/reboot.c</code> reboot</li>
+          <li><code>selinux/hooks.c</code> init → ksu</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="flash">
+      <div class="wrap">
+        <p class="kicker">Install</p>
+        <h2>Use fastbootd.</h2>
+        <p style="color:var(--dim);margin-top:-0.8rem;margin-bottom:1.4rem">Classic bootloader fastboot drops the transfer on this device.</p>
+        <div class="flash-grid">
+          <div class="flash-row">
+            <strong>Get the image</strong>
+            <p style="margin:0;color:var(--dim)">Download <code>kernelsu-next-boot.img</code> from GitHub Releases. It is not stored in git.</p>
+          </div>
+          <div class="flash-row">
+            <strong>Flash</strong>
+            <pre><code>adb reboot fastboot
+fastboot flash boot kernelsu-next-boot.img
+fastboot reboot</code></pre>
+          </div>
+          <div class="flash-row">
+            <strong>Manager</strong>
+            <p style="margin:0;color:var(--dim)">Install KernelSU Next Manager v3.3.0 (33214), grant ADB shell root, then check <code>su</code>.</p>
+          </div>
+        </div>
+        <div class="hash-row">
+          <code class="hash" id="sha">fe3c538e32a549f457643d158a49e17e07bc164659ab97d2ad39623d0bc10660  kernelsu-next-boot.img</code>
+          <button class="copy" type="button" data-copy="fe3c538e32a549f457643d158a49e17e07bc164659ab97d2ad39623d0bc10660">Copy SHA256</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="build">
+      <div class="wrap">
+        <p class="kicker">Reproduce</p>
+        <h2>Build it yourself.</h2>
+        <pre><code>./prepare-source.sh
+./build-kernel.sh
+cp /path/to/official/boot.img stock-boot.img
+./repack-boot.sh</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="warn" role="note">
+          <h2>Do not flash on stock LG firmware</h2>
+          <p>Unsupported V30 variants and the wrong LineageOS nightly can fail to boot. Keep the official boot.img from the same build, or the KernelSU v0.9.5 rollback image.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      LineageOS android_kernel_lge_msm8998 · KernelSU-Next legacy @ a54e4fa4 ·
+      <a href="https://github.com/TosteRino/joan-kernelsu">github.com/TosteRino/joan-kernelsu</a>
+      <div class="vibe">This site is <strong>vibecoded</strong>. The kernel is not.</div>
+    </div>
+  </footer>
+  <script defer>
+    const menu = document.querySelector(".menu");
+    menu.addEventListener("click", () => {
+      const open = document.body.classList.toggle("nav-open");
+      menu.setAttribute("aria-expanded", String(open));
+      menu.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    });
+    document.querySelectorAll("nav a").forEach((link) => {
+      link.addEventListener("click", () => {
+        document.body.classList.remove("nav-open");
+        menu.setAttribute("aria-expanded", "false");
+        menu.setAttribute("aria-label", "Open menu");
+      });
+    });
+    function selectHash() {
+      const hash = document.getElementById("sha");
+      if (!hash) return;
+      const range = document.createRange();
+      range.selectNodeContents(hash);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return "copied";
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        if (ok) return "copied";
+        selectHash();
+        return "selected";
+      }
+    }
+    document.querySelectorAll(".copy").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const prev = btn.textContent;
+        const result = await copyText(btn.getAttribute("data-copy"));
+        btn.textContent = result === "copied" ? "Copied" : "Hash selected";
+        setTimeout(() => { btn.textContent = prev; }, 1600);
+      });
+    });
+  </script>
+</body>
+</html>
