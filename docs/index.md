@@ -17,7 +17,7 @@ This project provides reproducible scripts and patches for building a KernelSU N
 - ROM: LineageOS 22.2
 - Android: Android 15
 - Kernel: Linux 4.4.302 non-GKI
-- Root method: KernelSU Next legacy
+- Root method: KernelSU Next `legacy` @ `a54e4fa4` (`v3.2.0-legacy-14`, `33193`)
 
 ## Search terms
 

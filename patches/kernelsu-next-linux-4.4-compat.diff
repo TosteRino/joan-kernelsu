@@ -1,0 +1,43 @@
+diff --git a/kernel/compat/kernel_compat.h b/kernel/compat/kernel_compat.h
+index 090aab85..b9ca444e 100644
+--- a/kernel/compat/kernel_compat.h
++++ b/kernel/compat/kernel_compat.h
+@@ -112,6 +112,14 @@ static inline ssize_t __strscpy_pad(char *dest, const char *src, size_t count)
+ #define ksu_access_ok(addr, size) access_ok(VERIFY_READ, addr, size)
+ #endif
+ 
++#ifndef ALIGN_DOWN
++#define ALIGN_DOWN(x, a) ((x) & ~((typeof(x))(a) - 1))
++#endif
++
++#ifndef __nocfi
++#define __nocfi
++#endif
++
+ #ifndef KSU_OPTIONAL_STRNCPY
+ extern long strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr,
+ 				   long count);
+diff --git a/kernel/feature/adb_root.c b/kernel/feature/adb_root.c
+index 0f71a50d..9c71fb4f 100644
+--- a/kernel/feature/adb_root.c
++++ b/kernel/feature/adb_root.c
+@@ -9,6 +9,7 @@
+ #include <linux/static_key.h>
+ #include <linux/slab.h>
+ 
++#include "compat/kernel_compat.h"
+ #include "adb_root.h"
+ #include "arch.h"
+ #include "policy/feature.h"
+diff --git a/kernel/feature/selinux_hide.c b/kernel/feature/selinux_hide.c
+index bdc8bacf..1c666e8c 100644
+--- a/kernel/feature/selinux_hide.c
++++ b/kernel/feature/selinux_hide.c
+@@ -12,6 +12,7 @@
+ #include <linux/namei.h>
+ #include <linux/kthread.h>
+ #include <linux/delay.h>
++#include "compat/kernel_compat.h"
+ #include "policy/feature.h"
+ #include "include/ksu.h"
+ #include  "uapi/feature.h"

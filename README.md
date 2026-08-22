@@ -4,12 +4,12 @@ KernelSU Next reference build for the **LG V30** (`joan` / H930, msm8998) runnin
 
 This tree targets the legacy **Linux 4.4.302 non-GKI** kernel. It intentionally avoids KernelSU Next's kprobe/kretprobe hook path and uses strict **manual hooks**, because kprobe-based VFS interception is too fragile on 4.4 under real I/O load.
 
-Final tested state:
+Current build:
 
-- KernelSU Next `v3.2.0-legacy`
-- Zygisk Next operational in `zygote` and `zygote_secondary`
-- TrickyStore + FixIntegrity working
-- Play Integrity: **BASIC + DEVICE**
+- KernelSU Next `legacy` @ `a54e4fa4` (`v3.2.0-legacy-14`, version `33193`)
+- Includes the v3.3.0 backports that landed on `legacy` (SELinux hide, adb root, sulog)
+- There is no `v3.3.0-legacy` tag yet; this is the newest non-GKI snapshot
+- Previous `v3.2.0-legacy` image was verified with Zygisk Next, TrickyStore + FixIntegrity, and Play Integrity **BASIC + DEVICE**. Flash-test this rebuild on device before treating those as confirmed.
 
 ## LG V30 Root / KernelSU
 
@@ -26,13 +26,14 @@ This repository contains scripts and patches to reproduce the KernelSU Next-enab
 - `repack-boot.sh` - repacks an official `boot.img` with the rebuilt kernel
 - `patches/post-kernelsu.diff` - local build fixes and KernelSU defconfig changes
 - `patches/manual-hooks-linux-4.4.diff` - strict Linux 4.4 manual hook integration
+- `patches/kernelsu-next-linux-4.4-compat.diff` - `ALIGN_DOWN` / `__nocfi` fallbacks for Linux 4.4
 
 The ready-to-flash image is not stored in git. GitHub releases should publish it as a release asset.
 
-Current tested image:
+Current image:
 
 - `kernelsu-next-boot.img`
-- SHA256: `8db8e7595af534f348401c4ca8a005088e05f2c90edaa4cffbc8bbc1e6da87c4`
+- SHA256: `fe3c538e32a549f457643d158a49e17e07bc164659ab97d2ad39623d0bc10660`
 
 ## Why Manual Hooks
 
@@ -67,7 +68,7 @@ fastboot flash boot kernelsu-next-boot.img
 fastboot reboot
 ```
 
-KernelSU Next Manager: `v3.2.0 (33129)`.
+KernelSU Next Manager: `v3.3.0 (33214)`.
 
 ## Rollback
 
@@ -125,5 +126,5 @@ TrickyStore
 ## Sources and Base
 
 - Kernel: `LineageOS/android_kernel_lge_msm8998` (`lineage-22.2`)
-- KernelSU Next: `KernelSU-Next/KernelSU-Next` branch `legacy` (`v3.2.0-legacy`)
-- Official base boot image: `lineage-22.2-20260524-nightly-joan`
+- KernelSU Next: `KernelSU-Next/KernelSU-Next` branch `legacy` @ `a54e4fa4` (`v3.2.0-legacy-14`, `33193`)
+- Official base boot image: `lineage-22.2-20260816-nightly-joan`
